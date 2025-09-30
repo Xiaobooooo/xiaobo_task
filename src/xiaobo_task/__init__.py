@@ -27,7 +27,7 @@ logger.configure(extra={"name": "MainApp"})
 from .domain import Target
 from .manager import TaskManager
 from .facade import XiaoboTask
-from .util import read_txt_file_lines, to_bool
+from .util import read_txt_file_lines
 
 # 定义当 `from task_framework import *` 时要导入的名称
 __all__ = [
@@ -35,5 +35,4 @@ __all__ = [
     'TaskManager',  # 底层任务管理器
     'XiaoboTask',  # 高级封装，推荐使用
     'read_txt_file_lines',  # 工具函数：按行读取文件
-    'to_bool',  # 工具函数：字符串转布尔
 ]
