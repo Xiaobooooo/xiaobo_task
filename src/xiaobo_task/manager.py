@@ -21,8 +21,7 @@ class TaskManager:
     def submit_task(
             self,
             task_func: Callable[..., Any],
-            args: Tuple = (),
-            kwargs: Optional[Dict[str, Any]] = None,
+            target: Optional[Target] = None,
             on_success: Optional[Callable[[Target, Any], None]] = None,
             on_error: Optional[Callable[[Target, Exception], None]] = None,
     ) -> Future:
@@ -30,16 +29,12 @@ class TaskManager:
 
         参数:
             task_func (Callable): 要在工作线程中执行的、已被完全包装好的目标函数。
-            args (Tuple): 传递给目标函数的位置参数。
-            kwargs (Optional[Dict]): 传递给目标函数的关键字参数。
+            target (Optional[Target]): 与任务关联的 Target 对象，主要用于回调。
             on_success (Optional[Callable]): 任务成功完成时调用的回调函数。
             on_error (Optional[Callable]): 任务执行过程中发生异常时调用的回调函数。
         """
-        # 从参数中提取 Target，用于回调
-        target = args[0] if args and isinstance(args[0], Target) else None
-
-        # 直接提交调用方传入的函数，不再关心其内部逻辑
-        future = self.executor.submit(task_func, *args, **kwargs)
+        # 直接提交调用方传入的、不带参数的包装函数
+        future = self.executor.submit(task_func)
 
         future.add_done_callback(
             lambda f: self._task_done_callback(f, target, on_success, on_error)

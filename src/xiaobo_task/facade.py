@@ -72,13 +72,10 @@ class XiaoboTask:
 
         self.logger.info("--- 配置加载完毕 ---")
 
-
     def submit_task(
             self,
-            task_logger: "Logger",
             task_func: Callable[..., Any],
-            args: Tuple = (),
-            kwargs: Optional[Dict[str, Any]] = None,
+            target: Optional[Target] = None,
             on_success: Optional[Callable[[Target, Any], None]] = None,
             on_error: Optional[Callable[[Target, Exception], None]] = None,
             retries: Optional[int] = None,
@@ -89,10 +86,9 @@ class XiaoboTask:
         此方法现在负责包装任务函数，为其添加重试和异步处理逻辑，
         然后将包装好的函数提交给底层的 TaskManager。
         """
-        target = args[0] if args and isinstance(args[0], Target) else None
 
         def on_task_success(t: Target, result: Any):
-            task_logger.success(f"✅ 任务执行成功")
+            t.logger.success(f"✅ 任务执行成功")
             if on_success:
                 on_success(t, result)
 
@@ -104,9 +100,9 @@ class XiaoboTask:
                 lineno = last_frame.lineno
                 error_type = error.__class__.__name__
                 log_message = f"❌ 任务执行失败 -> [{filename}:{lineno}] {error_type}: {error}"
-                task_logger.error(log_message)
+                t.logger.error(log_message)
             except Exception:
-                task_logger.error(f"❌ 任务执行失败 -> {error.__class__.__name__}: {error}")
+                t.logger.error(f"❌ 任务执行失败 -> {error.__class__.__name__}: {error}")
 
             if on_error:
                 on_error(t, error)
@@ -116,7 +112,7 @@ class XiaoboTask:
 
         # --- 将所有执行逻辑包装到一个函数中 ---
         def _wrapped_task_executor():
-            
+
             def log_before_retry(retry_state):
                 if target and target.logger:
                     exc = retry_state.outcome.exception()
@@ -134,17 +130,16 @@ class XiaoboTask:
             def task_to_run():
                 if inspect.iscoroutinefunction(task_func):
                     loop = util.get_or_create_event_loop()
-                    return loop.run_until_complete(task_func(*args, **(kwargs or {})))
+                    return loop.run_until_complete(task_func(target))
                 else:
-                    return task_func(*args, **(kwargs or {}))
+                    return task_func(target)
 
             return task_to_run()
-        # --- 包装结束 ---
 
+        # --- 包装结束 ---
         return self._manager.submit_task(
             task_func=_wrapped_task_executor,
-            args=args,  # 传递原始 args 以便 manager 能提取 target 用于回调
-            kwargs=kwargs,
+            target=target,
             on_success=on_task_success,
             on_error=on_task_error,
         )
@@ -153,8 +148,6 @@ class XiaoboTask:
             self,
             source: Union[int, List[Any]],
             task_func: Callable[..., Any],
-            args: Tuple = (),
-            kwargs: Optional[Dict[str, Any]] = None,
             on_success: Optional[Callable[[Target, Any], None]] = None,
             on_error: Optional[Callable[[Target, Exception], None]] = None,
             retries: Optional[int] = None,
@@ -193,14 +186,11 @@ class XiaoboTask:
                 if p:
                     proxy = p.replace('*****', str(item))
 
-            source_obj = Target(index=index, data=item, proxy=proxy, logger=task_logger)
-            task_args = (source_obj,) + args
+            target = Target(index=index, data=item, proxy=proxy, logger=task_logger)
 
             self.submit_task(
-                task_logger=task_logger,
                 task_func=task_func,
-                args=task_args,
-                kwargs=kwargs,
+                target=target,
                 on_success=on_success,
                 on_error=on_error,
                 retries=retries,
@@ -212,8 +202,6 @@ class XiaoboTask:
             filename: str,
             task_func: Callable[..., Any],
             separator: str = '----',
-            args: Tuple = (),
-            kwargs: Optional[Dict[str, Any]] = None,
             on_success: Optional[Callable[[Target, Any], None]] = None,
             on_error: Optional[Callable[[Target, Exception], None]] = None,
             retries: Optional[int] = None,
@@ -233,8 +221,6 @@ class XiaoboTask:
         self.submit_tasks(
             source=source_list,
             task_func=task_func,
-            args=args,
-            kwargs=kwargs,
             on_success=on_success,
             on_error=on_error,
             retries=retries,

@@ -27,11 +27,11 @@ from xiaobo_task import XiaoboTask, Target
 load_dotenv()
 
 
-def my_task_processor(target: Target, custom_arg: str):
+def my_task_processor(target: Target):
     """
     这是我们要并发执行的主任务函数。
     """
-    target.logger.info(f"开始处理任务，数据: {target.data}，自定义参数: {custom_arg}")
+    target.logger.info(f"开始处理任务，数据: {target.data}")
     target.logger.info(f"任务分配到的代理是: {target.proxy}")
 
     try:
@@ -81,7 +81,6 @@ if __name__ == "__main__":
         task_manager.submit_tasks(
             source=task_data_list,
             task_func=my_task_processor,
-            args=("这是一个自定义参数",),
             on_success=on_task_success,
             on_error=on_task_error,
             retries=1  # 将这批任务的重试次数覆盖为1
