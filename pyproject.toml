@@ -1,0 +1,13 @@
+[project]
+name = "xiaobo-task"
+version = "1.0.0"
+description = "自用多线程任务模块"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "curl-cffi>=0.13.0",
+    "loguru>=0.7.3",
+    "pydantic-settings>=2.11.0",
+    "python-dotenv>=1.1.1",
+    "tenacity>=9.1.2",
+]
