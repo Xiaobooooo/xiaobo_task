@@ -6,6 +6,9 @@ import asyncio
 import threading
 from typing import List, Optional
 
+from curl_cffi import BrowserTypeLiteral, Session, AsyncSession
+from curl_cffi.requests.impersonate import DEFAULT_CHROME
+
 # 使用线程本地存储为每个线程维护一个独立的事件循环
 _thread_local = threading.local()
 
@@ -43,3 +46,11 @@ def read_txt_file_lines(filename: str) -> List[str]:
         raise FileNotFoundError(f"错误：文件 '{filename}' 未找到。")
     except Exception as e:
         raise IOError(f"读取文件 '{filename}' 时发生错误: {e}")
+
+
+def get_session(proxy: str = None, timeout: int = 30, impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME):
+    return Session(proxy=proxy, timeout=timeout, impersonate=impersonate)
+
+
+def get_async_session(proxy: str = None, timeout: int = 30, impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME):
+    return AsyncSession(proxy=proxy, timeout=timeout, impersonate=impersonate)
